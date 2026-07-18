@@ -137,104 +137,157 @@ HTML_TEMPLATE = """
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Collect Data</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; }
-        body {
-            background: #222;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-family: sans-serif;
-            color: #fff;
-            min-height: 100vh;
+        html, body {
+            width: 100vw; height: 100vh; overflow: hidden;
+            background: #111;
+            font-family: sans-serif; color: #fff;
         }
         .container {
-            width: 100vw;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 10px;
+            width: 100vw; height: 100vh;
+            display: flex; flex-direction: column;
         }
-        #videoFeed {
-            width: 100%%;
-            max-width: 360px;
-            background: #000;
-            border-radius: 12px;
-            margin-bottom: 10px;
-        }
-        .controls {
-            display: flex;
-            flex-direction: row;
-            width: 100%%;
-            max-width: 400px;
-            flex: 1;
-        }
-        .half { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 10px; }
-        .left { background: #1a1a2e; border-radius: 12px 0 0 12px; }
-        .right { background: #16213e; border-radius: 0 12px 12px 0; }
-        .slider-vertical {
-            width: 80px; height: 200px;
-            -webkit-appearance: slider-vertical;
-            appearance: slider-vertical;
-            writing-mode: bt-lr;
-            background: #444; border-radius: 20px; outline: none;
-            transform: rotate(180deg);
-        }
-        .slider-vertical::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 30px; height: 30px;
-            border-radius: 50%%; background: #4CAF50; cursor: pointer;
-        }
-        .slider-horizontal {
-            width: 200px; height: 80px;
-            -webkit-appearance: none; appearance: none;
-            background: #444; border-radius: 20px; outline: none;
-        }
-        .slider-horizontal::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 30px; height: 30px;
-            border-radius: 50%%; background: #FF9800; cursor: pointer;
-        }
-        .label { margin: 8px 0; font-size: 16px; }
-        .label .value { font-weight: bold; }
-        .label .value.speed { color: #4CAF50; }
-        .label .value.steer { color: #FF9800; }
-        .record-bar {
-            display: flex; align-items: center; gap: 12px;
-            margin: 10px 0; padding: 8px 16px;
-            background: #2a2a2a; border-radius: 24px;
+
+        .top-bar {
+            height: 7vh; min-height: 40px;
+            display: flex; align-items: center;
+            padding: 0 4vw; gap: 2vw;
+            background: #1a1a1a;
+            flex-shrink: 0;
         }
         .record-btn {
-            width: 20px; height: 20px; border-radius: 50%%;
-            border: 3px solid #666; cursor: pointer; transition: 0.2s;
+            width: 18px; height: 18px; border-radius: 50%;
+            border: 3px solid #666;
+            flex-shrink: 0;
+            transition: 0.2s;
         }
-        .record-btn.idle { background: #666; }
-        .record-btn.recording { background: #f00; border-color: #f00; animation: pulse 1s infinite; }
-        @keyframes pulse { 0%% { opacity: 1; } 50%% { opacity: 0.5; } 100%% { opacity: 1; } }
-        .status { font-size: 14px; color: #aaa; }
-        .status .count { color: #fff; font-weight: bold; }
-        .info { font-size: 12px; color: #666; margin-top: 4px; }
+        .record-btn.idle { background: #555; }
+        .record-btn.recording { background: #f00; border-color: #f00; animation: pulse .8s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+        .frame-count { font-size: 14px; color: #aaa; flex: 1; }
+        .frame-count b { color: #fff; }
+
+        .main {
+            flex: 1; display: flex;
+            align-items: center;
+            padding: 1.5vh 1.5vw;
+            gap: 1.5vw;
+            min-height: 0;
+        }
+
+        .left-panel {
+            width: 14vw; max-width: 100px;
+            height: 100%;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        .left-panel .label {
+            font-size: 2.5vh; margin-top: 1vh;
+            text-align: center; line-height: 1.2;
+        }
+        .left-panel .label .v { color: #4CAF50; font-weight: bold; }
+
+        .center-panel {
+            flex: 1; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #videoFeed {
+            width: 100%; height: 100%;
+            object-fit: contain;
+            background: #000;
+            border-radius: 10px;
+        }
+
+        .right-panel {
+            width: 26vw; max-width: 180px;
+            height: 100%;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 1.5vh;
+        }
+        .right-panel .label {
+            font-size: 2.5vh;
+            text-align: center; line-height: 1.2;
+        }
+        .right-panel .label .v { color: #FF9800; font-weight: bold; }
+
+        input[type=range] {
+            -webkit-appearance: none; appearance: none;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            background: #333; border-radius: 999px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            border-radius: 50%; cursor: pointer;
+        }
+        input[type=range]::-moz-range-track {
+            background: #333; border-radius: 999px; border: none;
+        }
+        input[type=range]::-moz-range-thumb {
+            border-radius: 50%; cursor: pointer; border: none;
+        }
+
+        .speed-slider {
+            width: 6vw; max-width: 44px;
+            height: 70%;
+            writing-mode: bt-lr;
+        }
+        .speed-slider::-webkit-slider-runnable-track { height: 100%; }
+        .speed-slider::-webkit-slider-thumb {
+            width: 5vw; height: 5vw; max-width: 36px; max-height: 36px;
+            background: #4CAF50;
+        }
+        .speed-slider::-moz-range-track { height: 100%; }
+        .speed-slider::-moz-range-thumb {
+            width: 5vw; height: 5vw; max-width: 36px; max-height: 36px;
+            background: #4CAF50;
+        }
+
+        .steer-slider {
+            width: 80%; height: 7vw; max-height: 50px;
+        }
+        .steer-slider::-webkit-slider-runnable-track { height: 100%; }
+        .steer-slider::-webkit-slider-thumb {
+            width: 7vw; height: 7vw; max-width: 50px; max-height: 50px;
+            background: #FF9800;
+        }
+        .steer-slider::-moz-range-track { height: 100%; }
+        .steer-slider::-moz-range-thumb {
+            width: 7vw; height: 7vw; max-width: 50px; max-height: 50px;
+            background: #FF9800;
+        }
+
+        .steer-tick {
+            width: 80%; display: flex; justify-content: space-between;
+            font-size: 1.8vh; color: #666; padding: 0 2px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <img id="videoFeed" src="/video_feed">
-        <div class="record-bar">
-            <div class="record-btn" id="recordBtn" onclick="toggleRecord()"></div>
-            <span class="status"><span class="count" id="frameCount">0</span> frames</span>
+        <div class="top-bar">
+            <div class="record-btn idle" id="recordBtn" onclick="toggleRecord()"></div>
+            <span class="frame-count"><b id="frameCount">0</b> frames</span>
         </div>
-        <div class="controls">
-            <div class="half left">
-                <input type="range" class="slider-vertical" id="speedSlider" min="-100" max="100" value="0" step="1">
-                <div class="label">Speed: <span class="value speed" id="speedValue">0</span></div>
+        <div class="main">
+            <div class="left-panel">
+                <input type="range" class="speed-slider" id="speedSlider" min="-100" max="100" value="0" step="1">
+                <div class="label"><span class="v" id="speedValue">0</span></div>
             </div>
-            <div class="half right">
-                <input type="range" class="slider-horizontal" id="servoSlider" min="40" max="140" value="95" step="1">
-                <div class="label">Steer: <span class="value steer" id="servoValue">95</span>°</div>
+            <div class="center-panel">
+                <img id="videoFeed" src="/video_feed">
+            </div>
+            <div class="right-panel">
+                <input type="range" class="steer-slider" id="servoSlider" min="40" max="140" value="95" step="1">
+                <div class="label"><span class="v" id="servoValue">95</span>°</div>
+                <div class="steer-tick"><span>L</span><span>C</span><span>R</span></div>
             </div>
         </div>
-        <div class="info">Deadzone PWM: %d%% | Servo center: %d°</div>
     </div>
     <script>
         const speedSlider = document.getElementById('speedSlider');
