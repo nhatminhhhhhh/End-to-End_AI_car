@@ -1,22 +1,10 @@
 .venv/
 __pycache__/
 
-# Datasets (raw/processed - regenerate if needed)
-dataset/
-my_dataset/
-
-
-# Collected driving data
-data/collected_driving/
-
 # Visualizations
 *.png
 *.jpg
 *.mp4
 *.json
 
-#esp32_code 
-scripts/esp32_firmware
-
-autonomous_car_system/data/Road_img/
-autonomous_car_system/data/test_results/
+donkeycar/
