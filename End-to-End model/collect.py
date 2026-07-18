@@ -132,7 +132,7 @@ def cleanup():
         GPIO.cleanup()
 
 
-HTML_TEMPLATE = """
+HTML_TEMPLATE = r"""
 <!DOCTYPE html>
 <html>
 <head>
@@ -150,7 +150,6 @@ HTML_TEMPLATE = """
             width: 100vw; height: 100vh;
             display: flex; flex-direction: column;
         }
-
         .top-bar {
             height: 7vh; min-height: 40px;
             display: flex; align-items: center;
@@ -169,7 +168,6 @@ HTML_TEMPLATE = """
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
         .frame-count { font-size: 14px; color: #aaa; flex: 1; }
         .frame-count b { color: #fff; }
-
         .main {
             flex: 1; display: flex;
             align-items: center;
@@ -177,7 +175,6 @@ HTML_TEMPLATE = """
             gap: 1.5vw;
             min-height: 0;
         }
-
         .left-panel {
             width: 14vw; max-width: 100px;
             height: 100%;
@@ -189,7 +186,6 @@ HTML_TEMPLATE = """
             text-align: center; line-height: 1.2;
         }
         .left-panel .label .v { color: #4CAF50; font-weight: bold; }
-
         .center-panel {
             flex: 1; height: 100%;
             display: flex; align-items: center; justify-content: center;
@@ -200,7 +196,6 @@ HTML_TEMPLATE = """
             background: #000;
             border-radius: 10px;
         }
-
         .right-panel {
             width: 26vw; max-width: 180px;
             height: 100%;
@@ -213,7 +208,6 @@ HTML_TEMPLATE = """
             text-align: center; line-height: 1.2;
         }
         .right-panel .label .v { color: #FF9800; font-weight: bold; }
-
         input[type=range] {
             -webkit-appearance: none; appearance: none;
             background: transparent;
@@ -231,7 +225,6 @@ HTML_TEMPLATE = """
         input[type=range]::-moz-range-thumb {
             border-radius: 50%; cursor: pointer; border: none;
         }
-
         .speed-slider {
             width: 6vw; max-width: 44px;
             height: 70%;
@@ -247,7 +240,6 @@ HTML_TEMPLATE = """
             width: 5vw; height: 5vw; max-width: 36px; max-height: 36px;
             background: #4CAF50;
         }
-
         .steer-slider {
             width: 80%; height: 7vw; max-height: 50px;
         }
@@ -261,7 +253,6 @@ HTML_TEMPLATE = """
             width: 7vw; height: 7vw; max-width: 50px; max-height: 50px;
             background: #FF9800;
         }
-
         .steer-tick {
             width: 80%; display: flex; justify-content: space-between;
             font-size: 1.8vh; color: #666; padding: 0 2px;
@@ -284,7 +275,7 @@ HTML_TEMPLATE = """
             </div>
             <div class="right-panel">
                 <input type="range" class="steer-slider" id="servoSlider" min="40" max="140" value="95" step="1">
-                <div class="label"><span class="v" id="servoValue">95</span>°</div>
+                <div class="label"><span class="v" id="servoValue">95</span>&deg;</div>
                 <div class="steer-tick"><span>L</span><span>C</span><span>R</span></div>
             </div>
         </div>
@@ -341,7 +332,9 @@ HTML_TEMPLATE = """
     </script>
 </body>
 </html>
-""" % (DEADZONE_PERCENT, SERVO_CENTER)
+"""
+
+HTML_TEMPLATE = HTML_TEMPLATE.replace('DEADZONE', str(DEADZONE_PERCENT)).replace('CENTER', str(SERVO_CENTER)) % (DEADZONE_PERCENT, SERVO_CENTER)
 
 
 app = Flask(__name__)
