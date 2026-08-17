@@ -28,10 +28,14 @@ class E2EDataset(Dataset):
         return len(self.files)
 
     def __getitem__(self, idx):
-        path = self.files[idx]
-        frame = cv2.imread(path, cv2.IMREAD_COLOR)
-        if frame is None:
-            return self.__getitem__((idx + 1) % len(self.files))
+        for offset in range(len(self.files)):
+            i = (idx + offset) % len(self.files)
+            path = self.files[i]
+            frame = cv2.imread(path, cv2.IMREAD_COLOR)
+            if frame is not None:
+                break
+        else:
+            raise RuntimeError("All images are corrupted")
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = cv2.resize(frame, (INPUT_WIDTH, INPUT_HEIGHT)).astype(np.float32)
 

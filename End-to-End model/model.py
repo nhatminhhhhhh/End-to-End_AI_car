@@ -14,16 +14,16 @@ class E2EModel(nn.Module):
         in_c = num_channels
         h, w = input_height, input_width
         for i in range(len(filters)):
-            conv_layers.append(nn.Conv2d(in_c, filters[i], kernels[i], strides[i]))
+            conv_layers.append(nn.Conv2d(in_c, filters[i], kernels[i], strides[i])) 
             conv_layers.append(nn.BatchNorm2d(filters[i]))
             conv_layers.append(nn.ReLU(inplace=True))
             in_c = filters[i]
             h = (h - kernels[i]) // strides[i] + 1
             w = (w - kernels[i]) // strides[i] + 1
 
-        self.conv = nn.Sequential(*conv_layers)
+        self.conv = nn.Sequential(*conv_layers) 
 
-        flattened = h * w * filters[-1]
+        flattened = h * w * filters[-1] # layer cuối cùng của conv
         self.head = nn.Sequential(
             nn.Dropout(dropout),
             nn.Linear(flattened, 100),
@@ -43,7 +43,7 @@ class E2EModel(nn.Module):
         return x
 
 
-def compute_input_dims(height, width, kernels, strides):
+def compute_input_dims(height, width, kernels, strides): # tính kích thước layer cuối cùng của conv
     h, w = height, width
     for k, s in zip(kernels, strides):
         h = (h - k) // s + 1

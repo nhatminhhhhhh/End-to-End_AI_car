@@ -23,14 +23,21 @@ except ImportError:
     print("[WARN] Jetson.GPIO not available — simulation mode")
     GPIO = None
 
-MOTOR_PWM_PIN = 32
-SERVO_PWM_PIN = 33
+PCA9685_BUS = 0
+PCA9685_ADDR = 0x40
+SERVO_CHANNEL = 3
+
+try:
+    from pca9685 import PCA9685
+    pca = PCA9685(bus=PCA9685_BUS, address=PCA9685_ADDR)
+except Exception:
+    print("[WARN] PCA9685 not available — servo simulation")
+    pca = None
+
+MOTOR_PWM_PIN = 33
 IN1_PIN = 11
 IN2_PIN = 13
 PWM_MOTOR_FREQ = 1000
-PWM_SERVO_FREQ = 50
-SERVO_MIN_DUTY = 2.5
-SERVO_MAX_DUTY = 12.5
 PWM_MIN = 60
 PWM_MAX = 100
 
@@ -38,13 +45,10 @@ if GPIO:
     GPIO.setmode(GPIO.BOARD)
     GPIO.setwarnings(False)
     GPIO.setup(MOTOR_PWM_PIN, GPIO.OUT)
-    GPIO.setup(SERVO_PWM_PIN, GPIO.OUT)
     GPIO.setup(IN1_PIN, GPIO.OUT)
     GPIO.setup(IN2_PIN, GPIO.OUT)
     motor_pwm = GPIO.PWM(MOTOR_PWM_PIN, PWM_MOTOR_FREQ)
-    servo_pwm = GPIO.PWM(SERVO_PWM_PIN, PWM_SERVO_FREQ)
     motor_pwm.start(0)
-    servo_pwm.start(0)
 
 
 def gstreamer_pipeline():
@@ -74,27 +78,26 @@ def set_motor(speed):
     mapped = max(PWM_MIN, min(PWM_MAX, mapped))
     speed_out = sign * mapped
     if speed_out > 0:
-        GPIO.output(IN1_PIN, GPIO.HIGH)
-        GPIO.output(IN2_PIN, GPIO.LOW)
-        motor_pwm.ChangeDutyCycle(speed_out)
-    else:
         GPIO.output(IN1_PIN, GPIO.LOW)
         GPIO.output(IN2_PIN, GPIO.HIGH)
+        motor_pwm.ChangeDutyCycle(speed_out)
+    else:
+        GPIO.output(IN1_PIN, GPIO.HIGH)
+        GPIO.output(IN2_PIN, GPIO.LOW)
         motor_pwm.ChangeDutyCycle(-speed_out)
 
 
 def set_servo(angle):
-    if GPIO is None:
+    if pca is None:
         return
     angle = max(SERVO_MIN, min(SERVO_MAX, angle))
-    duty = SERVO_MIN_DUTY + (angle / 180.0) * (SERVO_MAX_DUTY - SERVO_MIN_DUTY)
-    servo_pwm.ChangeDutyCycle(duty)
+    pulse = pca.angle_to_pulse(angle)
+    pca.set_servo_pulse(SERVO_CHANNEL, pulse)
 
 
 def cleanup():
     if GPIO:
         motor_pwm.stop()
-        servo_pwm.stop()
         GPIO.cleanup()
 
 
@@ -110,17 +113,14 @@ def main():
     parser = argparse.ArgumentParser(description='E2E Autonomous Driving')
     parser.add_argument('--model', type=str, default=os.path.join(MODEL_DIR, 'best_model_traced.pt'))
     parser.add_argument('--fp16', action='store_true', help='Use FP16 inference')
-    parser.add_argument('--throttle', type=float, default=0.3, help='Fixed throttle (negative = reverse)')
     args = parser.parse_args()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"[Autonomous] Device: {device}")
 
     model = torch.jit.load(args.model, map_location=device)
     model.eval()
     if args.fp16 and device.type == 'cuda':
         model = model.half()
-        print("[Autonomous] FP16 enabled")
 
     cap = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
     if not cap.isOpened():
@@ -130,7 +130,18 @@ def main():
     set_servo(SERVO_CENTER)
     time.sleep(0.5)
 
-    print("[Autonomous] Running... Press Ctrl+C to stop")
+    print("\n" + "=" * 50)
+    print("  E2E AUTONOMOUS DRIVING")
+    print("=" * 50)
+    print(f"  Device: {device}")
+    print(f"  Model: {args.model}")
+    print(f"  Camera: {CAMERA_CAPTURE_WIDTH}x{CAMERA_CAPTURE_HEIGHT} -> {CAMERA_WIDTH}x{CAMERA_HEIGHT} @ {CAMERA_FPS}fps")
+    if args.fp16 and device.type == 'cuda':
+        print(f"  FP16: enabled")
+    print(f"  Deadzone PWM: {PWM_MIN}% | Servo center: {SERVO_CENTER} deg")
+    print("=" * 50)
+    print("  Running... Press Ctrl+C to stop\n")
+
     fps_counter = 0
     fps_timer = time.perf_counter()
     display_fps = 0.0
@@ -154,7 +165,7 @@ def main():
             steering_angle = int(steering_norm * STEERING_NORM_FACTOR + SERVO_CENTER)
             steering_angle = max(SERVO_MIN, min(SERVO_MAX, steering_angle))
 
-            throttle_val = int(args.throttle * THROTTLE_MAX_ABS)
+            throttle_val = int(throttle_norm * THROTTLE_MAX_ABS)
             throttle_val = max(-THROTTLE_MAX_ABS, min(THROTTLE_MAX_ABS, throttle_val))
 
             set_servo(steering_angle)
@@ -168,7 +179,7 @@ def main():
                 fps_timer = now
                 frame_ms = (now - t_frame) * 1000
                 print(f"  FPS: {display_fps:.0f}  Frame: {frame_ms:.0f}ms  "
-                      f"Steer: {steering_angle}° ({steering_norm:+.3f})  "
+                      f"Steer: {steering_angle} deg ({steering_norm:+.3f})  "
                       f"Throttle: {throttle_val} ({throttle_norm:+.3f})")
 
     cap.release()

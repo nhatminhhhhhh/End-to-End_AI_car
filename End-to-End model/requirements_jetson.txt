@@ -1,6 +1,0 @@
-torch (Jetson build from https://forums.developer.nvidia.com/)
-torchvision (Jetson build)
-Jetson.GPIO
-Flask>=2.0.0
-opencv-python>=4.8.0
-numpy>=1.23.0
